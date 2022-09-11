@@ -41,9 +41,9 @@ doRandomForest <- function(inputDf, title) {
   importance(rf)
 }
 
-doRandomForest(df)
-doRandomForest(df_SK)
-doRandomForest(df_US)
+doRandomForest(df, title='full data')
+doRandomForest(df_SK, title='south korea')
+doRandomForest(df_US, title='us')
 
 
 # library(pdp)
