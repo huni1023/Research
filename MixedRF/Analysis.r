@@ -53,7 +53,7 @@ doRandomForest <- function(inputDf, title) {
 }
 
 # doRandomForest(df, title='full data')
-str(df_SK)
+# str(df_SK)
 doRandomForest(df_SK, title='south korea')
 doRandomForest(df_US, title='us')
 
