@@ -2,7 +2,7 @@ library('haven')
 library('readxl')
 library('dplyr')
 library('randomForest') 
-
+library('caTools')
 
 set.seed(41) # set random seed
 # NA2mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
@@ -13,12 +13,14 @@ set.seed(41) # set random seed
 ###
 df <- read_excel('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing.xlsx', sheet='full')
 df$resilient <- as.factor(df$resilient)
+df <- subset(df, select=-c(ESCS))
+summary(df)
 
 df_SK <- df[df$CNT=='Korea', ]
 df_US <- df[df$CNT=='United States', ]
-
 df_SK <- df_SK[-c(1,2,3)] # CNT, CNTSCHID, CNTSTUID
-df_US <- df_US[-c(1,2,3)]
+df_US <- df_US[-c(1,2,3)] # CNT, CNTSCHID, CNTSTUID
+
 
 print(dim(df_SK))
 print(dim(df_US))
@@ -31,31 +33,21 @@ doRandomForest <- function(inputDf, title) {
                                                as.factor)
   df.roughfix <- na.roughfix(inputDf)
   
-  train_idx <- sample(1:nrow(df.roughfix), size=0.7*nrow(df.roughfix), replace=F)
+  sample = sample.split(inputDf$resilient, SplitRatio = .7)
+  df_train = subset(df.roughfix, sample == TRUE)
+  df_test  = subset(df.roughfix, sample == FALSE)
   
-  df_train <- df.roughfix[train_idx, ]
-  df_test <- df.roughfix[-train_idx, ]
-  print(dim(df_test))
   
-  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 10)
-                     # do.trace = TRUE # if set True, console window get dirty
+  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 500)
 
-  pred <- predict(object = rf, newData = df_test, type='class', se=T)
-  print(length(pred))
-  # print(pred)
-  plot(x = pred, y= df_test$resilient)
-
-  rf.pred.train <- predict(object= rf, newData = df_train)
-  
-  # cor.test #!# TBD
-  # varImpPlot(rf, main=title)
-  # importance(rf)
+  #!# pred <- predict(object = rf, newData = df_test) # it occurs error
+  pred <- predict(rf, df_test, type="class")
+  print(confusionMatrix(pred, df_test$resilient))
+  varImpPlot(rf, main=title, mar = c(1, 1, 1, 1))
 }
 
-# doRandomForest(df, title='full data')
-# str(df_SK)
-doRandomForest(df_SK, title='south korea')
-doRandomForest(df_US, title='us')
+doRandomForest(df_SK, title='South Korea')
+doRandomForest(df_US, title='US')
 
 
 # library(pdp)
