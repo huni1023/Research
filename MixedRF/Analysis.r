@@ -5,6 +5,7 @@ library('randomForest')
 library('caTools')
 library('caret')
 
+
 set.seed(41) # set random seed
 # NA2mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
 
@@ -13,7 +14,13 @@ set.seed(41) # set random seed
 # load and slicing data will be converted to function
 ###
 Loader <- function(sheetName) {
-  df <- read_excel('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing.xlsx', sheet=sheetName)
+  if (Sys.info()['sysname'] == 'Darwin') {
+    data_path <- '/Users/huni/Proj/Research/MixedRF/data/preprocessing.xlsx'  
+  } else {
+    data_path <- 'C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing.xlsx'
+  }
+  
+  df <- read_excel(data_path, sheet=sheetName)
   df$resilient <- as.factor(df$resilient)
   df <- subset(df, select=-c(ESCS))
   summary(df)
@@ -37,7 +44,7 @@ doRandomForest <- function(inputDf, title) {
   inputDf[sapply(inputDf, is.character)] <- lapply(inputDf[sapply(inputDf, is.character)], 
                                                as.factor)
   df.roughfix <- na.roughfix(inputDf)
-  print(summary(df.roughfix))
+  # print(summary(df.roughfix))
   
   sample = sample.split(df.roughfix$resilient, SplitRatio = 0.7)
   df_train = subset(df.roughfix, sample == TRUE)
@@ -55,7 +62,6 @@ doRandomForest <- function(inputDf, title) {
 doRandomForest(dfObj$SK, title='South Korea')
 doRandomForest(dfObj$US, title='US')
 
-print('1')
 # library(pdp)
 # partial(rf_IB, pred.var='L2Y6C0804', plot=TRUE)
 # partial(rf_IB, pred.var='L2Y6S0401', plot=TRUE)
