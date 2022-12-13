@@ -51,7 +51,7 @@ doRandomForest <- function(inputDf, title) {
   df_test  = subset(df.roughfix, sample == FALSE)
   
   
-  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 500)
+  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 1000)
 
   #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
