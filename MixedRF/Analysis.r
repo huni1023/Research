@@ -27,6 +27,7 @@ Loader <- function(sheetName) {
   
   df_SK <- df[df$CNT=='Korea', ]
   df_US <- df[df$CNT=='United States', ]
+  print(summary(df_US))
   df_SK <- df_SK[-c(1,2,3)] # CNT, CNTSCHID, CNTSTUID
   df_US <- df_US[-c(1,2,3)] # CNT, CNTSCHID, CNTSTUID
   result <- list('SK' = df_SK, 'US'= df_US)
@@ -35,7 +36,7 @@ Loader <- function(sheetName) {
 
 # dfObj = Loader(sheetName = 'full')
 dfObj = Loader(sheetName = 'sliced')
-
+print(summary(dfObj$US))
 
 ###
 # Start Random Forest
@@ -43,15 +44,20 @@ dfObj = Loader(sheetName = 'sliced')
 doRandomForest <- function(inputDf, title) {
   inputDf[sapply(inputDf, is.character)] <- lapply(inputDf[sapply(inputDf, is.character)], 
                                                as.factor)
-  df.roughfix <- na.roughfix(inputDf)
+  # df.roughfix <- na.roughfix(inputDf)
   # print(summary(df.roughfix))
   
-  sample = sample.split(df.roughfix$resilient, SplitRatio = 0.7)
-  df_train = subset(df.roughfix, sample == TRUE)
-  df_test  = subset(df.roughfix, sample == FALSE)
+  # sample = sample.split(df.roughfix$resilient, SplitRatio = 0.7)
+  # df_train = subset(df.roughfix, sample == TRUE)
+  # df_test  = subset(df.roughfix, sample == FALSE)
+  sample = sample.split(inputDf$resilient, SplitRatio = 0.7)
+  df_train = subset(inputDf, sample == TRUE)
+  df_test  = subset(inputDf, sample == FALSE)
   
-  
-  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 1000)
+  print(summary(df_train))  
+  # print(dim(df_train))
+  # print(dim(df_test))
+  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 1000, na.action = na.roughfix)
 
   #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
