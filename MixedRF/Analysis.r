@@ -62,26 +62,10 @@ doRandomForest <- function(inputDf, title) {
 doRandomForest(dfObj$SK, title='South Korea')
 doRandomForest(dfObj$US, title='US')
 
-# library(pdp)
+library(pdp)
+# get top 10 variable
+# drawing pdp like subplot
+
 # partial(rf_IB, pred.var='L2Y6C0804', plot=TRUE)
 # partial(rf_IB, pred.var='L2Y6S0401', plot=TRUE)
 # partial(rf_IB, pred.var='L2Y6S2702', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6C1401', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6S2704', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6C0212', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6C1404', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6C1403', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6C0810', plot=TRUE)
-# partial(rf_IB, pred.var='L2Y6S0408', plot=TRUE)
-# 
-# 
-# partial(rf_IG, pred.var='L2Y6S0401', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6S2704', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6C0809', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6S0407', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6C1401', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6S0412', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6S0408', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6C0211', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6C0810', plot=TRUE)
-# partial(rf_IG, pred.var='L2Y6C0212', plot=TRUE)
