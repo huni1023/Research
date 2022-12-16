@@ -51,20 +51,52 @@ doRandomForest <- function(inputDf, title) {
   # df_train = subset(inputDf, sample == TRUE)
   # df_test  = subset(inputDf, sample == FALSE)
   
-  rf <- randomForest(resilient ~., data = df_train, mtry = floor(sqrt(ncol(df_train))), ntree = 1000, na.action = na.roughfix)
+  # rf <- randomForest(resilient ~.,
+  #                    data = df_train,
+  #                    mtry = floor(sqrt(ncol(df_train))),
+  #                    ntree = 1000,
+  #                    na.action = na.roughfix,
+  #                    importance=FALSE
+  #                    )
+  rf <- randomForest(resilient ~.,
+                     data = df_train,
+                     mtry = floor(sqrt(ncol(df_train))),
+                     # ntree = 1000,
+                     na.action = na.roughfix,
+                     importance=FALSE
+                     )
 
   #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
   print(confusionMatrix(pred, df_test$resilient))
   varImpPlot(rf, main=title, mar = c(1, 1, 1, 1))
+  return(rf)
 }
 
-doRandomForest(dfObj$SK, title='South Korea')
-doRandomForest(dfObj$US, title='US')
+rf.SK <- doRandomForest(dfObj$SK, title='South Korea')
+rf.US <- doRandomForest(dfObj$US, title='US')
+
+plot(rf.SK$err.rate[, 1])
 
 library(pdp)
 # get top 10 variable
+top10.SK <- topPredictors(rf.SK, n = 10)
+top10.US <- topPredictors(rf.US, n = 10)
+
 # drawing pdp like subplot
+# Construct partial dependence functions for top four predictors
+pd <- NULL
+for (i in top4) {
+  tmp <- partial(mtcars.rf, pred.var = i)
+  names(tmp) <- c("x", "y")
+  pd <- rbind(pd, cbind(tmp, predictor = i))
+}
+# Display partial dependence functions
+ggplot(pd, aes(x, y)) +
+  geom_line() +
+  facet_wrap(~ predictor, scales = "free") +
+  theme_bw() +
+  ylab("mpg")
 
 # partial(rf_IB, pred.var='L2Y6C0804', plot=TRUE)
 # partial(rf_IB, pred.var='L2Y6S0401', plot=TRUE)
