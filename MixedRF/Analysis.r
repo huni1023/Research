@@ -51,20 +51,21 @@ doRandomForest <- function(inputDf, title) {
   # df_train = subset(inputDf, sample == TRUE)
   # df_test  = subset(inputDf, sample == FALSE)
   
-  # rf <- randomForest(resilient ~.,
-  #                    data = df_train,
-  #                    mtry = floor(sqrt(ncol(df_train))),
-  #                    ntree = 1000,
-  #                    na.action = na.roughfix,
-  #                    importance=FALSE
-  #                    )
   rf <- randomForest(resilient ~.,
                      data = df_train,
                      mtry = floor(sqrt(ncol(df_train))),
-                     # ntree = 1000,
+                     ntree = 10000,
                      na.action = na.roughfix,
-                     importance=FALSE
+                     importance=TRUE
                      )
+  # rf <- randomForest(resilient ~.,
+  #                    data = df_train,
+  #                    mtry = floor(sqrt(ncol(df_train))),
+  #                    ntree = 5000,
+  #                    na.action = na.roughfix,
+  #                    importance=FALSE,
+  #                    nodesize = 5
+  #                    )
 
   #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
@@ -76,7 +77,9 @@ doRandomForest <- function(inputDf, title) {
 rf.SK <- doRandomForest(dfObj$SK, title='South Korea')
 rf.US <- doRandomForest(dfObj$US, title='US')
 
+# plot err rate per tree
 plot(rf.SK$err.rate[, 1])
+plot(rf.US$err.rate[, 1])
 
 library(pdp)
 # get top 10 variable
