@@ -4,6 +4,7 @@ library('dplyr')
 library('randomForest') 
 library('caTools')
 library('caret')
+library('ggplot2')
 
 
 set.seed(41) # set random seed
@@ -47,39 +48,61 @@ doRandomForest <- function(inputDf, title) {
   sample = sample.split(df.roughfix$resilient, SplitRatio = 0.7)
   df_train = subset(df.roughfix, sample == TRUE)
   df_test  = subset(df.roughfix, sample == FALSE)
-  # sample = sample.split(inputDf$resilient, SplitRatio = 0.7)
-  # df_train = subset(inputDf, sample == TRUE)
-  # df_test  = subset(inputDf, sample == FALSE)
   
   rf <- randomForest(resilient ~.,
                      data = df_train,
                      mtry = floor(sqrt(ncol(df_train))),
-                     ntree = 10000,
+                     ntree = 5000,
                      na.action = na.roughfix,
                      importance=TRUE
                      )
-  # rf <- randomForest(resilient ~.,
-  #                    data = df_train,
-  #                    mtry = floor(sqrt(ncol(df_train))),
-  #                    ntree = 5000,
-  #                    na.action = na.roughfix,
-  #                    importance=FALSE,
-  #                    nodesize = 5
-  #                    )
-
+  
   #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
-  print(confusionMatrix(pred, df_test$resilient))
-  varImpPlot(rf, main=title, mar = c(1, 1, 1, 1))
-  return(rf)
+  print(confusionMatrix(pred, df_test$resilient)) # rs1. confusion matrix
+  
+  png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\%s.png', title))
+  # varImpPlot(rf, main=title, mar = c(1, 1, 1, 1)) 
+  
+  db.imp <- importance(rf, type=1)
+  df.imp <- data.frame(db.imp)
+  # print(df.imp)
+  df.imp.descending <- df.imp %>% arrange(desc(MeanDecreaseAccuracy))
+  df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
+  # print(df.imp.percentage)
+  
+  plt <- ggplot(df.imp.percentage,
+                aes( x = reorder(rownames(df.imp.percentage), Percentage),
+                     y = Percentage
+                     )) +
+                geom_col() +
+                xlab("variable") +
+                coord_flip() + 
+                ggtitle(sprintf("Variabel Importance Plot__%s", title))
+  
+  print(plt)
+  dev.off()
+  rs <- list('model'= rf, 'df.mda'= df.imp.percentage)
+  return(rs)
 }
 
+# sample test
 rf.SK <- doRandomForest(dfObj$SK, title='South Korea')
 rf.US <- doRandomForest(dfObj$US, title='US')
 
 # plot err rate per tree
-plot(rf.SK$err.rate[, 1])
-plot(rf.US$err.rate[, 1])
+plot(rf.SK$model$err.rate[, 1])
+plot(rf.US$model$err.rate[, 1])
+
+
+
+#main analysis
+rf_loop <- function(title, rfModel, df.mda) {
+  
+}
+
+
+
 
 library(pdp)
 # get top 10 variable
