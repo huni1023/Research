@@ -40,7 +40,7 @@ dfObj = Loader(sheetName = 'sliced')
 ###
 # Start Random Forest
 ####
-doRandomForest <- function(inputDf, title) {
+doRandomForest <- function(inputDf, title, idx=0) {
   inputDf[sapply(inputDf, is.character)] <- lapply(inputDf[sapply(inputDf, is.character)], 
                                                as.factor)
   df.roughfix <- na.roughfix(inputDf)
@@ -57,19 +57,17 @@ doRandomForest <- function(inputDf, title) {
                      importance=TRUE
                      )
   
-  #!# pred <- predict(object = rf, newData = df_test) # it occurs error
   pred <- predict(rf, df_test, type="class")
   print(confusionMatrix(pred, df_test$resilient)) # rs1. confusion matrix
   
-  png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\%s.png', title))
+  png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\%s_%s.png', title, idx))
   # varImpPlot(rf, main=title, mar = c(1, 1, 1, 1)) 
   
   db.imp <- importance(rf, type=1)
   df.imp <- data.frame(db.imp)
-  # print(df.imp)
   df.imp.descending <- df.imp %>% arrange(desc(MeanDecreaseAccuracy))
   df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
-  # print(df.imp.percentage)
+  print(df.imp.percentage)
   
   plt <- ggplot(df.imp.percentage,
                 aes( x = reorder(rownames(df.imp.percentage), Percentage),
@@ -97,9 +95,14 @@ plot(rf.US$model$err.rate[, 1])
 
 
 #main analysis
-rf_loop <- function(title, rfModel, df.mda) {
-  
+rf_loop <- function(data, title) {
+  for (x in 1:5) {
+    doRandomForest(inputDf= data, title=title, idx=x)
+  }
 }
+
+rf_loop(dfObj$SK, title='South Korea')
+rf_loop(dfObj$US, title='United States')
 
 
 
