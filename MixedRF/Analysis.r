@@ -14,11 +14,11 @@ set.seed(41) # set random seed
 ###
 # load and slicing data will be converted to function
 ###
-Loader <- function(sheetName) {
+Loader <- function(sheetName, PV_num) {
   if (Sys.info()['sysname'] == 'Darwin') {
     data_path <- '/Users/huni/Proj/Research/MixedRF/data/preprocessing.xlsx'  
   } else {
-    data_path <- 'C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing.xlsx'
+    data_path <- sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num)
   }
   
   df <- read_excel(data_path, sheet=sheetName)
@@ -35,7 +35,7 @@ Loader <- function(sheetName) {
 }
 
 # dfObj = Loader(sheetName = 'full')
-dfObj = Loader(sheetName = 'sliced')
+dfObj = Loader(sheetName = 'sliced', PV_num="10")
 
 ###
 # Start Random Forest
@@ -66,22 +66,23 @@ doRandomForest <- function(inputDf, title, idx=0) {
   db.imp <- importance(rf, type=1)
   df.imp <- data.frame(db.imp)
   df.imp.descending <- df.imp %>% arrange(desc(MeanDecreaseAccuracy))
-  df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
-  print(df.imp.percentage)
+  # df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
+  # print(df.imp.percentage)
+  print(df.imp.descending)
   
-  plt <- ggplot(df.imp.percentage,
-                aes( x = reorder(rownames(df.imp.percentage), Percentage),
-                     y = Percentage
-                     )) +
-                geom_col() +
-                xlab("variable") +
-                coord_flip() + 
-                ggtitle(sprintf("Variabel Importance Plot__%s", title))
-  
-  print(plt)
-  dev.off()
-  rs <- list('model'= rf, 'df.mda'= df.imp.percentage)
-  return(rs)
+  # plt <- ggplot(df.imp.percentage,
+  #               aes( x = reorder(rownames(df.imp.percentage), Percentage),
+  #                    y = Percentage
+  #                    )) +
+  #               geom_col() +
+  #               xlab("variable") +
+  #               coord_flip() + 
+  #               ggtitle(sprintf("Variabel Importance Plot__%s", title))
+  # 
+  # print(plt)
+  # dev.off()
+  # rs <- list('model'= rf, 'df.mda'= df.imp.percentage)
+  # return(rs)
 }
 
 # sample test
