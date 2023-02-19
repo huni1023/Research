@@ -1,14 +1,22 @@
 import os
+import argparse
 import numpy as np
 import pandas as pd
 
 from sys import platform
 from tqdm import tqdm
 
+# argument
+parser = argparse.ArgumentParser(description= 'Option')
+parser.add_argument('--full', action='store_true', default=False,
+                    help="load all data and cleaning from the beginning")
+args = parser.parse_args()
+
 
 class Load:
-    def __init__(self, stuFolder, schFolder, tchFolder, codeBook,
-                onlyCodeBook, ):
+    def __init__(self, stuFolder, schFolder, tchFolder, codeBook):
+        global args
+        
         if 'darwin' in platform:
             self.BASE_DIR = '/Users/huni/Dropbox/[3]Project/[혼합효과 랜덤포레스트_2022]'
         else:
@@ -20,7 +28,7 @@ class Load:
         rawData_Folder = 'PISA2018'
         codebook_Folder = 'drive-download-20220816T053902Z-001'
 
-        if onlyCodeBook == False:
+        if args.full == True:
             print('>>>>> Init: load raw data')
             stuFile = [FILE for FILE in os.listdir(os.path.join(self.BASE_DIR, rawData_Folder, stuFolder)) if FILE[-4:] == '.sav'][0]
             schFile = [FILE for FILE in os.listdir(os.path.join(self.BASE_DIR, rawData_Folder, schFolder)) if FILE[-4:] == '.sav'][0]
@@ -121,3 +129,23 @@ class Load:
 
         # categories 에서 일단은 codebook에 있는 변수가 다 있나 확인
         # categories 에서 individual & family, school 구분
+
+
+if __name__ == '__main__':
+    Loader = Load(stuFolder="STU", schFolder='SCH', tchFolder='TCH',
+                codeBook='PISA2018_CODEBOOK (변수선택-공유).xlsx'
+                )
+    if args.full == True:
+        Loader.defaultCleaner()
+        print(Loader.default_cleaningData.keys())
+
+        with pd.ExcelWriter(os.path.join(os.getcwd(), 'data', 'cleanedData(SK).xlsx')) as writer:
+            Loader.default_cleaningData['SK'][0].to_excel(writer, sheet_name='stu', index=False)
+            Loader.default_cleaningData['SK'][1].to_excel(writer, sheet_name='sch', index=False)
+            Loader.default_cleaningData['SK'][2].to_excel(writer, sheet_name='tch', index=False) 
+
+
+        with pd.ExcelWriter(os.path.join(os.getcwd(), 'data', 'cleanedData(US).xlsx')) as writer:
+            Loader.default_cleaningData['US'][0].to_excel(writer, sheet_name='stu', index=False)
+            Loader.default_cleaningData['US'][1].to_excel(writer, sheet_name='sch', index=False)
+            Loader.default_cleaningData['US'][2].to_excel(writer, sheet_name='tch', index=False)
