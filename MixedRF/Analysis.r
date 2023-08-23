@@ -8,7 +8,6 @@ library('ggplot2')
 
 
 set.seed(41) # set random seed
-# NA2mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
 
 
 ###
@@ -19,7 +18,7 @@ Loader <- function(sheetName, PV_num) {
     data_path <- '/Users/huni/Proj/Research/MixedRF/data/preprocessing.xlsx'  
   } else {
     # data_path <- sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num) # labtop
-    data_path <- sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num) # desktop
+    data_path <- sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\rs\\preprocessing%s.xlsx', PV_num) # desktop
     
   }
   
@@ -92,6 +91,7 @@ rf.SK <- doRandomForest(dfObj$SK, title='South Korea')
 rf.US <- doRandomForest(dfObj$US, title='US')
 
 # plot err rate per tree
+#!# 23.08.23 not working
 plot(rf.SK$model$err.rate[, 1])
 plot(rf.US$model$err.rate[, 1])
 
