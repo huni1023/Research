@@ -9,7 +9,6 @@ library('ggplot2')
 
 set.seed(41) # set random seed
 
-
 ###
 # load and slicing data will be converted to function
 ###
@@ -61,45 +60,39 @@ doRandomForest <- function(inputDf, title, idx=0) {
   pred <- predict(rf, df_test, type="class")
   print(confusionMatrix(pred, df_test$resilient)) # rs1. confusion matrix
   
-  # png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) #labtop
-  png(filename = sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) # desktop
-  # varImpPlot(rf, main=title, mar = c(1, 1, 1, 1)) 
+  png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) #labtop
+  # png(filename = sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) # desktop
+  dev.off() #after using png function, this code line is essential. if not, plot pannel will not show nothing
+  # varImpPlot(rf, main=title, mar = c(1, 1, 1, 1))
   
   db.imp <- importance(rf, type=1)
   df.imp <- data.frame(db.imp)
   df.imp.descending <- df.imp %>% arrange(desc(MeanDecreaseAccuracy))
-  # df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
+  df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
   print(df.imp.descending)
   
-  # plt <- ggplot(df.imp.percentage,
-  #               aes( x = reorder(rownames(df.imp.percentage), Percentage),
-  #                    y = Percentage
-  #                    )) +
-  #               geom_col() +
-  #               xlab("variable") +
-  #               coord_flip() + 
-  #               ggtitle(sprintf("Variabel Importance Plot__%s", title))
-  # 
-  # print(plt)
-  # dev.off()
-  # rs <- list('model'= rf, 'df.mda'= df.imp.percentage)
-  # return(rs)
+  rs <- list('model'= rf, 'df.mda'= df.imp.percentage) 
+  return(rs) # data return as list, first element: randomForest model, seconde element: cleaned dataFrame
 }
 
-# sample test
+"""
+sample test
+- run RF and plot
+
+"""
 rf.SK <- doRandomForest(dfObj$SK, title='South Korea')
 rf.US <- doRandomForest(dfObj$US, title='US')
 
-# plot err rate per tree
-#!# 23.08.23 not working
-# rf.SK$model$err.rate
-rf.SK$model
-plot(rf.SK$model$err.rate[, 1])
 plot(rf.US$model$err.rate[, 1])
+varImpPlot(rf.SK$model,
+           sort = T,
+           n.var = 10,
+           main = "Top 10 - Variable Importance")
 
-
-
-#main analysis
+"""
+main analysis
+- iterate data
+"""
 rf_loop <- function(data, title) {
   for (x in 1:5) {
     doRandomForest(inputDf= data, title=title, idx=x)
@@ -109,12 +102,13 @@ rf_loop <- function(data, title) {
 rf_loop(dfObj$SK, title='South Korea')
 rf_loop(dfObj$US, title='United States')
 
-
-
-
+#!# 23.08.23
+"""
+history를 몰라서 사용하기 어려울듯듯
+"""
 library(pdp)
 # get top 10 variable
-top10.SK <- topPredictors(rf.SK, n = 10)
+top10.SK <- topPredictors(rf.SK$df.mda, n = 10)
 top10.US <- topPredictors(rf.US, n = 10)
 
 # drawing pdp like subplot
@@ -125,6 +119,7 @@ for (i in top4) {
   names(tmp) <- c("x", "y")
   pd <- rbind(pd, cbind(tmp, predictor = i))
 }
+
 # Display partial dependence functions
 ggplot(pd, aes(x, y)) +
   geom_line() +

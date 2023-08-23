@@ -4,3 +4,5 @@
 *.jpg
 .RData
 .Rhistory
+*.sav
+*.spv
