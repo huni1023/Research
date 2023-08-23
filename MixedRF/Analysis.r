@@ -18,7 +18,9 @@ Loader <- function(sheetName, PV_num) {
   if (Sys.info()['sysname'] == 'Darwin') {
     data_path <- '/Users/huni/Proj/Research/MixedRF/data/preprocessing.xlsx'  
   } else {
-    data_path <- sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num)
+    # data_path <- sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num) # labtop
+    data_path <- sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\data\\preprocessing%s.xlsx', PV_num) # desktop
+    
   }
   
   df <- read_excel(data_path, sheet=sheetName)
@@ -60,14 +62,14 @@ doRandomForest <- function(inputDf, title, idx=0) {
   pred <- predict(rf, df_test, type="class")
   print(confusionMatrix(pred, df_test$resilient)) # rs1. confusion matrix
   
-  png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\data\\%s_%s.png', title, idx))
+  # png(filename = sprintf('C:\\Users\\jhun1\\Proj\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) #labtop
+  png(filename = sprintf('C:\\Users\\jhun1\\Dev\\Research\\MixedRF\\rs\\%s_%s.png', title, idx)) # desktop
   # varImpPlot(rf, main=title, mar = c(1, 1, 1, 1)) 
   
   db.imp <- importance(rf, type=1)
   df.imp <- data.frame(db.imp)
   df.imp.descending <- df.imp %>% arrange(desc(MeanDecreaseAccuracy))
   # df.imp.percentage <- df.imp.descending %>% mutate(Percentage=round(MeanDecreaseAccuracy/sum(MeanDecreaseAccuracy)*100,2))
-  # print(df.imp.percentage)
   print(df.imp.descending)
   
   # plt <- ggplot(df.imp.percentage,

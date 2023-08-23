@@ -5,12 +5,15 @@ import pandas as pd
 
 from sys import platform
 from tqdm import tqdm
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # argument
 parser = argparse.ArgumentParser(description= 'Option')
 parser.add_argument('--full', action='store_true', default=False,
                     help="load all data and cleaning from the beginning")
-args = parser.parse_args()
+args = parser.parse_args() # only python
+# args = parser.parse_args(args=[]) # for jupyternotebook
 
 
 class Load:
@@ -21,7 +24,7 @@ class Load:
             self.BASE_DIR = '/Users/huni/Dropbox/[3]Project/[혼합효과 랜덤포레스트_2022]'
         else:
             if os.getlogin() == 'jhun1':
-                self.BASE_DIR = r'C:\Users\jhun1\Dropbox\[3]Project\[혼합효과 랜덤포레스트_2022]'
+                self.BASE_DIR = r'C:\Users\jhun1\Dropbox\[2]Project\[혼합효과 랜덤포레스트_2022]'
                 
             elif os.getlogin() == 'snukh':
                 self.BASE_DIR = r'C:\Users\snukh\Downloads\[혼합효과 랜덤포레스트_2022]' 
@@ -30,6 +33,7 @@ class Load:
 
         if args.full == True:
             print('>>>>> Init: load raw data')
+            print(datetime.now(tz=ZoneInfo("Asia/Seoul")))
             stuFile = [FILE for FILE in os.listdir(os.path.join(self.BASE_DIR, rawData_Folder, stuFolder)) if FILE[-4:] == '.sav'][0]
             schFile = [FILE for FILE in os.listdir(os.path.join(self.BASE_DIR, rawData_Folder, schFolder)) if FILE[-4:] == '.sav'][0]
             tchFile = [FILE for FILE in os.listdir(os.path.join(self.BASE_DIR, rawData_Folder, tchFolder)) if FILE[-4:] == '.sav'][0]
