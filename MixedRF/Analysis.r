@@ -92,6 +92,8 @@ rf.US <- doRandomForest(dfObj$US, title='US')
 
 # plot err rate per tree
 #!# 23.08.23 not working
+# rf.SK$model$err.rate
+rf.SK$model
 plot(rf.SK$model$err.rate[, 1])
 plot(rf.US$model$err.rate[, 1])
 
