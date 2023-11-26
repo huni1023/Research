@@ -8,7 +8,7 @@ save code for research
 - LDA using gensim LDAmulticore
 - 3 steps building LDA model
 
-### 2.2 ENApy.py
+### 2.2 
 - 
 - 
 
