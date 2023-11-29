@@ -7,7 +7,7 @@ library('caret')
 library('ggplot2')
 
 
-set.seed(41) # set random seed
+set.seed(41) # set random seed # for reproducibility
 
 ###
 # load and slicing data will be converted to function
@@ -129,7 +129,7 @@ rf_loop2 <- function() {
   for (x in 1:10) {
     dfObj = Loader(sheetName = 'sliced', PV_num=as.character(x))
     doRandomForest(inputDf= dfObj$SK, title="South Korea", idx=x)
-    # doRandomForest(inputDf= dfObj$US, title="United States", idx=x)
+    doRandomForest(inputDf= dfObj$US, title="United States", idx=x)
   }
 }
 rf_loop2()
@@ -139,19 +139,30 @@ rf_loop2()
 #!# 23.08.23
 history를 몰라서 사용하기 어려울듯듯
 "
-library(pdp)
-# # get top 10 variable
-# top10.SK <- topPredictors(rf.SK, n = 10)
-# top10.US <- topPredictors(rf.US, n = 10)
+library(pdp) # for partial, plotPartial, and grid.arrange functions
+
+# partial(rf.SK, pred.var = "METASUM", plot = TRUE) # Figure 2 (left)
+partial(rf.SK, pred.var = "PV10READ", plot = TRUE) # Figure 2 (left)
+rf.SK %>%
+  partial(pred.var = "METASUM") %>%
+  autoplot() + theme_bw()
+  # autoplot(rug = TRUE, train = boston) + theme_bw()
+
+data (boston) # load the boston housing data
+boston.rf <- randomForest(cmedv ~ ., data = boston)
+# Partial dependence of cmedv on lstat
+boston.rf %>%
+  partial(pred.var = "lstat") %>%
+  autoplot(rug = TRUE, train = boston) + theme_bw()
 
 # drawing pdp like subplot
-# # Construct partial dependence functions for top four predictors
-# pd <- NULL
-# for (i in top4) {
-#   tmp <- partial(mtcars.rf, pred.var = i)
-#   names(tmp) <- c("x", "y")
-#   pd <- rbind(pd, cbind(tmp, predictor = i))
-# }
+# Construct partial dependence functions for top four predictors
+pd <- NULL
+for (i in top4) {
+  tmp <- partial(mtcars.rf, pred.var = i)
+  names(tmp) <- c("x", "y")
+  pd <- rbind(pd, cbind(tmp, predictor = i))
+}
 
 # Display partial dependence functions
 ggplot(pd, aes(x, y)) +
