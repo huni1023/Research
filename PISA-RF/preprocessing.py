@@ -44,9 +44,8 @@ class Preprocessing:
         self.PV_var = PV_var
 
         self.nation_real_name = {'SK': '대한민국', 'US': '미국'}
-        self.valid_data = {'SK': list(), 'US': list()}
-        self._2_joined = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
-        self._3_dropNa = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
+        self.data_1_join = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
+        self.data_2_dropNA = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
 
         # self._4_ESCS = {'full': {'SK': pd.DataFrame(), 'US': pd.DataFrame()},
         #                 'sliced': {'SK': pd.DataFrame(), 'US': pd.DataFrame()}}
@@ -59,82 +58,51 @@ class Preprocessing:
         self.rs_deescriptive_SK = pd.DataFrame()
         self.rs_deescriptive_US = pd.DataFrame()
 
-    def Drop_empty_column(self):
-        r"""
-        - drop feature, if it has too many NA (over 80%) 
-        """
-        toDrop = {}
-        
-        for nationName, nationalData in self.data.items():
-            toDrop[nationName] = []
-            for idx, (label, inputDf) in enumerate(zip('stu sch tch'.split(), nationalData)):
-                if label == 'tch': #!# 굳이 tch을 살펴보지 않은 이유는?
-                    pass
-                else:
-                    for column in inputDf.columns:
-                        if inputDf[column].isna().sum() > (inputDf.shape[0] * 0.8):
-                            print('>>> too much NA: ', column)
-                            toDrop[nationName].append(column)
-                            continue
-                        
-                        elif 'missing' in inputDf[column].values:
-                            print('>>> missing: ', column)
-                            toDrop[nationName].append(column)
-                            continue
-                        
-                        else:
-                            continue
-
-            for nation, grouped_data in self.data.items():
-                self.valid_data[nation] = []
-                for idx, each_group_data in enumerate(grouped_data):
-                    if idx == 0 : # in case of 'student'
-                        #!# 코드북고 함께 확인필요, 굳이 RESPECT열을 떨군 이유가?
-                        self.valid_data[nation].append(each_group_data.drop('PERSPECT', axis=1))
-                    else: 
-                        self.valid_data[nation].append(each_group_data)
-                        
-        return toDrop
-
 
     def Join_group_data(self):
         r"""
         join student and school dataframe
         #!# 교사데이터는 어디서 합치는가
         """
-        print('\n\n>>>> 2. Join DataFrame')
+        logger.debug(f'step2. join dataframe')
 
-        for nationalName, inputNational in self.valid_data.items():
-            # print('>> join nation: ', nationalName)
+        for nationalName, inputNational in self.data.items():
             df_student = inputNational[0].copy()
             df_school = inputNational[1].copy()
+            df_teacher = inputNational[2].copy()
             
             df_student.reset_index(drop=True, inplace=True)
-            
             rs = copy.deepcopy(df_student)
             before = df_student.shape
 
-
-            df_school.drop(['CNTRYID', 'CNT'], axis=1, inplace=True)
-            if df_school.index.name != 'CNTSCHID':
-                df_school.set_index('CNTSCHID', drop=True, inplace=True)
-            
+            # merge school data
             if df_school.shape[1] == 0:
-                print('>> school data is empty')
-                pass
+                logger.debug('school data is empty')
             else:
+                df_school.set_index('CNTSCHID', drop=True, inplace=True)
+
+                #!# 학교 인덱스 unique 값을 기준으로 도는게 맞을듯,
+                #!# 학생의 학교 인덱스 unique도 구해보고, set을 효율적으로 써서 해결해야할 문제로 보임
                 for idx in tqdm(df_student.index, desc=">> mapping"):
-                    toBeInput = df_school.loc[idx, 'CNTSCHID'].values # 학생 데이터에 들어가야할 학교 데이터 찾기
-                    assert len(toBeInput) == df_school.shape[1]
+                    #!# 매우 이상함, 이미 위에서 CNTSCHID를 인덱스로 바꿨는데,
+                    #!# 또 열 명칭이 CNTSCHID라고?
+                    student_school_info = df_school.loc[idx, 'CNTSCHID'].values # 학생 데이터에 들어가야할 학교 데이터 찾기
+                    assert len(student_school_info) == df_school.shape[1]
                     
-                    toBeInput_T = toBeInput.reshape(1, 8)
+                    #!# 그냥 행을 그대로 복붙해서 끼워맞추는 것임, 근데 이걸 이렇게 하나..
+                    toBeInput_T = student_school_info.reshape(1, 8)
                     rs.loc[idx, list(df_school.columns)] = toBeInput_T[0]
             
-                after = rs.shape
-                print('>>>> Bef: ', before, '....', 'Aft: ', after)
-                assert 'EDUSHORT' in rs.columns #!# 왜 필요할까
+            # merge teacher data
+            if df_teacher.shape[1] == 0:
+                logger.debug('teacher data is empty')
+            else:
+                #!# 현 코드북 상으로는 어차피 이부분이 의미가 없긴함
+                pass
 
-            self._2_joined[nationalName] = rs
+            after = rs.shape
+            logger.debug(f'Bef: {before}, Aft: {after}')
+            self.data_1_join[nationalName] = rs
         return rs
     
     def Drop_student(self, na_threshold: int, is_visualize=True):
@@ -216,14 +184,14 @@ class Preprocessing:
         
         #!# 이 부분은 sequential한 단계에서 빠져야할 것 같음, EDA에 가까움
         # visualize와 같이, debug 단계만 사용되면 되고, 나머지에서는 굳이 계산할 필요가 없음
-        self.rs_deescriptive_Full = column_wise_NA(self._2_joined)
-        self.rs_deescriptive_SK = column_wise_NA(self._2_joined['SK'])
-        self.rs_deescriptive_US = column_wise_NA(self._2_joined['US'])
+        self.rs_deescriptive_Full = column_wise_NA(self.data_1_join)
+        self.rs_deescriptive_SK = column_wise_NA(self.data_1_join['SK'])
+        self.rs_deescriptive_US = column_wise_NA(self.data_1_join['US'])
 
-        clean_data_using_rowwise_NA = row_wise_NA(self._2_joined, na_threshold=na_threshold, is_visualize=is_visualize)
-        self._3_dropNa['SK'] = clean_data_using_rowwise_NA['SK']
-        self._3_dropNa['US'] = clean_data_using_rowwise_NA['US']
-        return self._3_dropNa
+        clean_data_using_rowwise_NA = row_wise_NA(self.data_1_join, na_threshold=na_threshold, is_visualize=is_visualize)
+        self.data_2_dropNA['SK'] = clean_data_using_rowwise_NA['SK']
+        self.data_2_dropNA['US'] = clean_data_using_rowwise_NA['US']
+        return self.data_2_dropNA
 
     @staticmethod
     def _load_data():
@@ -233,9 +201,8 @@ class Preprocessing:
 
 
 def main():
-    processor = Preprocessing(codebook_name='',
+    processor = Preprocessing(codebook_name='codebook.xlsx',
                   PV_var=10)
-    processor.Drop_empty_column()
     processor.Join_group_data()
     processor.Drop_student(na_threshold=30, is_visualize=True)
 
