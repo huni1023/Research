@@ -37,9 +37,8 @@ def timeit(func):
 
 class Load:
     def __init__(self, codeBook):
-        global args
         r""" Load Student, School, Teacher, Codebook data
-        - put PISA 2018 data SPSS file in data folder 
+        - put PISA 2018 data SPSS file in data folder (stduent, schoo, teacher)
         - PISA 2018 database: https://www.oecd.org/pisa/data/2018database/
         """
         if os.path.isdir(os.path.join(App_dir, 'data')) == False:
@@ -90,7 +89,7 @@ class Load:
         """
         cleaned_nation = Load._devide_nation(self) # 국가먼저 작업해줘야함, 뒤에서 코드북에 없는 데이터는 날리기 때문임
         cleaned_variable = Load._clean_variable(self, data = cleaned_nation)
-        self.default_cleaningData = Load._validity_column(self, data = cleaned_variable)
+        self.default_cleaningData = Load._validate_column(self, data = cleaned_variable)
 
         # save result
         with open(os.path.join(self.Data_dir, 'cleaned.pkl'), 'wb') as f:
@@ -170,7 +169,7 @@ class Load:
                 rs[nation].append(data[col_ls])
         return rs
     
-    def _validity_column(self, data: dict) -> dict:
+    def _validate_column(self, data: dict) -> dict:
         r"""check validity of each column,
         cross check column na ratio
         """
@@ -192,12 +191,12 @@ class Load:
                 pass
             else:
                 warning_cnt += 1
-                logger.warn('check your codebook, some column has too many NA value')
+                logger.warn(f'check your codebook, some column has too many NA value, {diff_SK_US}, {diff_US_SK}')
         
         if warning_cnt == 0:
             return data
         else:
-            raise ValueError('your codebook have invalid features, too many NA values in dataframe')
+            raise ValueError('your codebook have invalid features, data count is invalid btw two country')
             
 
 
