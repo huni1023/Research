@@ -54,11 +54,11 @@ class Load:
         cond3 = os.path.isfile(os.path.join(self.Data_dir, "data_tch.pkl"))
         if cond1 and cond2 and cond3:
             with open(os.path.join(self.Data_dir, "data_stu.pkl"), 'rb') as f:
-                self.rawStu = pickle.load(f)
+                self.rawStu = pd.read_pickle(f)
             with open(os.path.join(self.Data_dir, "data_sch.pkl"), 'rb') as f:
-                self.rawSCH = pickle.load(f)
+                self.rawSCH = pd.read_pickle(f)
             with open(os.path.join(self.Data_dir, "data_tch.pkl"), 'rb') as f:
-                self.rawTCH = pickle.load(f)
+                self.rawTCH = pd.read_pickle(f)
         else:
             try:
                 tmp_stu = Load._load_zipfile(self, zipfile_dir=os.path.join(self.Data_dir, 'SPSS_STU_QQQ.zip'),
@@ -175,7 +175,7 @@ class Load:
         """
         warning_cnt = 0
         
-        for idx in range(len('student school teacher').split()):
+        for idx in range(len('student school teacher'.split())):
             invalid_col = {'SK': [], 'US': []}
             for nation in 'SK US'.split():
                 threshold = data[nation][idx].shape[0] * 0.8
@@ -187,7 +187,7 @@ class Load:
             diff_US_SK = set(invalid_col['US']) - set(invalid_col['SK'])
             logger.debug(f"difference set: SK - US, {diff_SK_US}")
             logger.debug(f"difference set: US - SK, {diff_US_SK}")
-            if (len(diff_US_SK) == 0) and (len(diff_SK_US)):
+            if (len(diff_US_SK) == 0) and (len(diff_SK_US) == 0):
                 pass
             else:
                 warning_cnt += 1
