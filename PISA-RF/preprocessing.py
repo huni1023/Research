@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -25,7 +24,8 @@ plt.rcParams['font.family'] = 'Malgun Gothic'
 
 # logging
 logger = logging.getLogger("preprocessing")
-formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s")
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s -preprocessing- %(levelname)s:%(message)s")
 handler = logging.FileHandler("event.log")
 handler.setLevel(logging.DEBUG)
 handler.setFormatter(formatter)
@@ -36,76 +36,59 @@ App_dir = os.getcwd()
 Data_dir = os.path.join(App_dir, 'data')
 Result_dir = os.path.join(App_dir, 'rs')
 
+from load import timeit
 
 class Preprocessing:
-    def __init__(self, codebook_name, PV_var):
+    def __init__(self, codebook_name):
         self.data = Preprocessing._load_data()
         self.cb = pd.read_excel(os.path.join(Data_dir, codebook_name))
-        self.PV_var = PV_var
 
         self.nation_real_name = {'SK': '대한민국', 'US': '미국'}
         self.data_1_join = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
         self.data_2_dropNA = {'SK': pd.DataFrame(), 'US': pd.DataFrame()}
-
-        # self._4_ESCS = {'full': {'SK': pd.DataFrame(), 'US': pd.DataFrame()},
-        #                 'sliced': {'SK': pd.DataFrame(), 'US': pd.DataFrame()}}
-        # self._5_shouldBeCal = {'full': {'SK': pd.DataFrame(), 'US': pd.DataFrame()},
-        #                        'sliced': {'SK': pd.DataFrame(), 'US': pd.DataFrame()}}
-        # self.finalRS = {'full': {'SK': pd.DataFrame(), 'US': pd.DataFrame()},
-        #                 'sliced': {'SK': pd.DataFrame(), 'US': pd.DataFrame()}}
         
         self.rs_deescriptive_Full = pd.DataFrame()
         self.rs_deescriptive_SK = pd.DataFrame()
         self.rs_deescriptive_US = pd.DataFrame()
 
-
+    @timeit
     def Join_group_data(self):
         r"""
-        join student and school dataframe
-        #!# 교사데이터는 어디서 합치는가
+        join student, school and teacher dataframe
         """
-        logger.debug(f'step2. join dataframe')
+        logger.debug(f'step1. join dataframe')
 
         for nationalName, inputNational in self.data.items():
             df_student = inputNational[0].copy()
             df_school = inputNational[1].copy()
             df_teacher = inputNational[2].copy()
+            logger.debug(f'student data: {df_student.shape}')
+            logger.debug(f'school data: {df_school.shape}')
+            logger.debug(f'teacher data: {df_teacher.shape}')
             
             df_student.reset_index(drop=True, inplace=True)
             rs = copy.deepcopy(df_student)
             before = df_student.shape
 
             # merge school data
-            if df_school.shape[1] == 0:
+            if df_school.shape[1] <= Preprocessing._demographic_column_count(self):
                 logger.debug('school data is empty')
             else:
-                df_school.set_index('CNTSCHID', drop=True, inplace=True)
-
-                #!# 학교 인덱스 unique 값을 기준으로 도는게 맞을듯,
-                #!# 학생의 학교 인덱스 unique도 구해보고, set을 효율적으로 써서 해결해야할 문제로 보임
-                for idx in tqdm(df_student.index, desc=">> mapping"):
-                    #!# 매우 이상함, 이미 위에서 CNTSCHID를 인덱스로 바꿨는데,
-                    #!# 또 열 명칭이 CNTSCHID라고?
-                    student_school_info = df_school.loc[idx, 'CNTSCHID'].values # 학생 데이터에 들어가야할 학교 데이터 찾기
-                    assert len(student_school_info) == df_school.shape[1]
-                    
-                    #!# 그냥 행을 그대로 복붙해서 끼워맞추는 것임, 근데 이걸 이렇게 하나..
-                    toBeInput_T = student_school_info.reshape(1, 8)
-                    rs.loc[idx, list(df_school.columns)] = toBeInput_T[0]
+                Preprocessing._match_info(data_ref=df_student, data=df_school)
             
             # merge teacher data
-            if df_teacher.shape[1] == 0:
+            if df_teacher.shape[1] <= Preprocessing._demographic_column_count(self):
                 logger.debug('teacher data is empty')
             else:
-                #!# 현 코드북 상으로는 어차피 이부분이 의미가 없긴함
-                pass
+                Preprocessing._match_info(data_ref=df_student, data=df_teacher)
 
             after = rs.shape
             logger.debug(f'Bef: {before}, Aft: {after}')
             self.data_1_join[nationalName] = rs
         return rs
     
-    def Drop_student(self, na_threshold: int, is_visualize=True):
+    @timeit
+    def Drop_student(self, na_threshold: int, is_visualize=False):
         r"""
         drop student who have too many NA value
         Parameters
@@ -113,7 +96,7 @@ class Preprocessing:
         na_threshold: int
             drop student who have NA value above this threshold
         """
-        print('\n>>>> 3. Verify na and Drop student')
+        logger.debug(f'step2. Verify na and Drop student')
         def column_wise_NA(inputData) -> dict:
             r"""generate column-wise NA ratio"""
             if type(inputData) == dict:
@@ -125,8 +108,7 @@ class Preprocessing:
             
             else:
                 raise TypeError('dictionary or pd.DataFrame is allowed')
-                
-
+            
             describeDF = merged.describe().T
             describeDF['NA_ratio'] = round(100 - describeDF['count']/merged.shape[0]*100, 2)
 
@@ -152,7 +134,7 @@ class Preprocessing:
                     for_histogram[label].append(na_ratio)
                     if na_cnt > na_threshold:
                         to_drop.append(i)
-                print(f'>> NA drop of {label}: ', len(to_drop))
+                logger.debug(f'NA drop of {label}: {len(to_drop)}')
                 rs[label] = data.drop(to_drop, axis=1)
 
             if is_visualize == True:
@@ -198,11 +180,20 @@ class Preprocessing:
         with open(os.path.join(App_dir, 'data', 'cleaned.pkl'), 'rb') as f:
             loadedData = pickle.load(f)
         return loadedData
+    
+    @staticmethod
+    def _match_info(data_ref: pd.DataFrame, data: pd.DataFrame) -> pd.DataFrame:
+        r"""match student-school info, and student-teacher info"""
+        raise NotImplementedError
+    
+    def _demographic_column_count(self) -> int:
+        r"""count demographic columns"""
+        identifier_cb = self.cb[self.cb['category']=='identifier']
+        return identifier_cb.shape[0]
 
 
 def main():
-    processor = Preprocessing(codebook_name='codebook.xlsx',
-                  PV_var=10)
+    processor = Preprocessing(codebook_name='codebook.xlsx')
     processor.Join_group_data()
     processor.Drop_student(na_threshold=30, is_visualize=True)
 
